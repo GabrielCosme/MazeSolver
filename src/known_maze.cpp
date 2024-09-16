@@ -2,6 +2,7 @@
 #define KNOWN_MAZE_CPP
 
 #include <format>
+#include <iterator>
 #include <queue>
 
 #include "known_maze.hpp"
@@ -47,17 +48,33 @@ void KnownMaze<width, height>::update(const Pose& pose, const std::array<bool, 3
 }
 
 template <std::uint8_t width, std::uint8_t height>
-Pose KnownMaze<width, height>::get_action(const Pose& pose) const {
+Pose KnownMaze<width, height>::get_action(const Pose& pose, bool force_costmap) const {
     const Cell&   current_cell = this->get_cell(pose);
-    std::uint16_t smallest_cost = current_cell.cost;
-    Pose          next_pose = pose;
+    std::uint16_t current_cost = current_cell.cost;
+
+    if (not force_costmap and (not this->exploring or this->returning) and this->best_route.contains(current_cost) and
+        this->best_route.at(current_cost) == std::make_pair(pose.x, pose.y)) {
+        const auto& aux = (this->returning ? std::prev(this->best_route.find(current_cost)) :
+                                             std::next(this->best_route.find(current_cost)))
+                              ->second;
+
+        Side new_dir = pose.direction({aux.first, aux.second, pose.orientation});
+
+        if (pose.orientation != new_dir) {
+            return {pose.x, pose.y, pose.direction({aux.first, aux.second, new_dir})};
+        }
+
+        return {aux.first, aux.second, pose.orientation};
+    }
+
+    Pose next_pose = pose;
 
     for (std::uint8_t i = Side::LEFT; i <= Side::DOWN; i++) {
         Side side = static_cast<Side>(i);
         Pose front_cell = pose + side;
 
-        if (not current_cell.walls[side] and this->get_cell(front_cell).cost < smallest_cost) {
-            smallest_cost = this->get_cell(front_cell).cost;
+        if (not current_cell.walls[side] and this->get_cell(front_cell).cost < current_cost) {
+            current_cost = this->get_cell(front_cell).cost;
 
             if (pose.orientation == side) {
                 next_pose = front_cell;
@@ -117,6 +134,19 @@ void KnownMaze<width, height>::calculate_costmap() {
                 queue.push(front_cell);
             }
         }
+    }
+
+    if (not this->returning) {
+        return;
+    }
+
+    Pose current_pose = this->start;
+    this->best_route.clear();
+    this->best_route.try_emplace(this->get_cell(this->start).cost, this->start.x, this->start.y);
+
+    while (current_pose.x != this->goal.x or current_pose.y != this->goal.y) {
+        current_pose = this->get_action(current_pose, true);
+        this->best_route.try_emplace(this->get_cell(current_pose).cost, current_pose.x, current_pose.y);
     }
 }
 

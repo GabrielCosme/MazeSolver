@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdint>
 #include <ostream>
+#include <map>
 
 #include "type.hpp"
 
@@ -14,7 +15,7 @@ public:
 
     void update(const Pose& pose, const std::array<bool, 3>& information);
 
-    Pose get_action(const Pose& pose) const;
+    Pose get_action(const Pose& pose, bool force_costmap = false) const;
 
     template <std::uint8_t w, std::uint8_t h>
     friend std::ostream& operator<<(std::ostream& os, const KnownMaze<w, h>& maze);
@@ -38,8 +39,11 @@ private:
 
     Pose start;
     Pose goal;
+
     bool returning{};
     bool exploring{true};
+
+    std::map<std::uint16_t, std::pair<std::uint8_t, std::uint8_t>, std::greater<std::uint16_t>> best_route;
 };
 
 #include "../src/known_maze.cpp"

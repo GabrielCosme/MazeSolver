@@ -23,6 +23,26 @@ struct Pose {
 
     Pose turned_right() const { return {this->x, this->y, static_cast<Side>((this->orientation + 1) % 4)}; }
 
+    Side direction(const Pose& next) const {
+        if (next.x < this->x) {
+            return Side::LEFT;
+        }
+
+        if (next.y < this->y) {
+            return Side::UP;
+        }
+
+        if (next.x > this->x) {
+            return Side::RIGHT;
+        }
+
+        if (next.y > this->y) {
+            return Side::DOWN;
+        }
+
+        return Side::UP;
+    }
+
     bool operator==(const Pose& other) const {
         return this->x == other.x and this->y == other.y and this->orientation == other.orientation;
     }
