@@ -25,7 +25,7 @@ KnownMaze<width, height>::KnownMaze(const Pose& start, const Pose& goal) : start
 
 template <std::uint8_t width, std::uint8_t height>
 void KnownMaze<width, height>::update(const Pose& pose, const std::array<bool, 3>& information) {
-    if (pose.x == this->goal.x and pose.y == this->goal.y) {
+    if (pose.together(this->goal)) {
         this->returning = true;
     } else if (pose == start.turned_back()) {
         this->exploring = false;
@@ -37,11 +37,11 @@ void KnownMaze<width, height>::update(const Pose& pose, const std::array<bool, 3
     }
 
     this->update_walls(pose, information[Side::UP]);
-    Pose front_cell = pose.front();
+    Pose front_pose = pose.front();
 
     if (not information[Side::UP]) {
-        this->update_walls(front_cell.turned_left(), information[Side::LEFT]);
-        this->update_walls(front_cell.turned_right(), information[Side::RIGHT]);
+        this->update_walls(front_pose.turned_left(), information[Side::LEFT]);
+        this->update_walls(front_pose.turned_right(), information[Side::RIGHT]);
     }
 
     this->calculate_costmap();
@@ -71,13 +71,13 @@ Pose KnownMaze<width, height>::get_action(const Pose& pose, bool force_costmap) 
 
     for (std::uint8_t i = Side::LEFT; i <= Side::DOWN; i++) {
         Side side = static_cast<Side>(i);
-        Pose front_cell = pose + side;
+        Pose front_pose = pose + side;
 
-        if (not current_cell.walls[side] and this->get_cell(front_cell).cost < current_cost) {
-            current_cost = this->get_cell(front_cell).cost;
+        if (not current_cell.walls[side] and this->get_cell(front_pose).cost <= current_cost) {
+            current_cost = this->get_cell(front_pose).cost;
 
             if (pose.orientation == side) {
-                next_pose = front_cell;
+                next_pose = front_pose;
             } else {
                 next_pose = {pose.x, pose.y, side};
             }
@@ -113,6 +113,7 @@ void KnownMaze<width, height>::update_walls(const Pose& pose, bool wall) {
 template <std::uint8_t width, std::uint8_t height>
 void KnownMaze<width, height>::calculate_costmap() {
     std::array<std::array<bool, width>, height> visited{};
+    std::array<std::array<Side, width>, height> origin{};
     std::queue<Pose>                            queue;
 
     queue.push(this->goal);
@@ -126,12 +127,17 @@ void KnownMaze<width, height>::calculate_costmap() {
 
         for (std::uint8_t i = Side::LEFT; i <= Side::DOWN; i++) {
             Side side = static_cast<Side>(i);
-            Pose front_cell = current_pose + side;
+            Pose front_pose = current_pose + side;
 
-            if (not current_cell.walls[side] and not visited.at(front_cell.y).at(front_cell.x)) {
-                this->get_cell(front_cell).cost = current_cell.cost + 1;
-                visited.at(front_cell.y).at(front_cell.x) = true;
-                queue.push(front_cell);
+            if (not current_cell.walls[side] and not visited.at(front_pose.y).at(front_pose.x)) {
+                visited.at(front_pose.y).at(front_pose.x) = true;
+                origin.at(front_pose.y).at(front_pose.x) = side;
+
+                this->get_cell(front_pose).cost =
+                    (current_cell.cost +
+                     (current_pose.together(this->goal) or (side == origin.at(current_pose.y).at(current_pose.x)) ? 1 :
+                                                                                                                    2));
+                queue.push(front_pose);
             }
         }
     }

@@ -43,6 +43,8 @@ struct Pose {
         return Side::UP;
     }
 
+    bool together(const Pose& other) const { return this->x == other.x and this->y == other.y; }
+
     bool operator==(const Pose& other) const {
         return this->x == other.x and this->y == other.y and this->orientation == other.orientation;
     }
