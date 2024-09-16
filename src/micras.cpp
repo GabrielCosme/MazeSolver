@@ -51,6 +51,12 @@ std::ostream& operator<<(std::ostream& os, const Micras<width, height>& micras) 
 
         if (aux == '%') {
             os << "█";
+        } else if (aux == '[' or aux == ']') {
+            os << "🮕";
+        } else if (aux == '(') {
+            os << "╒";
+        } else if (aux == ')') {
+            os << "╕";
         } else {
             os << aux;
         }

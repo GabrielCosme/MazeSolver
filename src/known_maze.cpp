@@ -138,7 +138,13 @@ std::ostream& operator<<(std::ostream& os, const KnownMaze<width, height>& maze)
             if ((row % 2 == 0) and (col % 2 == 0)) {
                 drawing_array[row][col] = "%%";
             } else if ((row % 2 == 1) and (col % 2 == 1)) {
-                drawing_array[row][col] = std::format("{:02}", maze.cells[row / 2][col / 2].cost);
+                if (row / 2 == maze.start.y and col / 2 == maze.start.x) {
+                    drawing_array[row][col] = "()";
+                } else if (row / 2 == maze.goal.y and col / 2 == maze.goal.x) {
+                    drawing_array[row][col] = "[]";
+                } else {
+                    drawing_array[row][col] = std::format("{:02}", maze.cells[row / 2][col / 2].cost);
+                }
             }
 
             os << drawing_array[row][col];
