@@ -31,13 +31,13 @@ std::ostream& operator<<(std::ostream& os, const Micras<width, height>& micras) 
 
     switch (micras.pose.orientation) {
         case Side::LEFT:
-            buffer << "< ";
+            buffer << " <";
             break;
         case Side::UP:
             buffer << "/\\";
             break;
         case Side::RIGHT:
-            buffer << " >";
+            buffer << "> ";
             break;
         case Side::DOWN:
             buffer << "\\/";
@@ -57,6 +57,10 @@ std::ostream& operator<<(std::ostream& os, const Micras<width, height>& micras) 
             os << "╒";
         } else if (aux == ')') {
             os << "╕";
+        } else if (aux == '>') {
+            os << "🮥";
+        } else if (aux == '<') {
+            os << "🮤";
         } else {
             os << aux;
         }
