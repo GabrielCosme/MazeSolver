@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug GDB",
+            "type": "cppdbg",
+            "program": "${CMAKE_CURRENT_SOURCE_DIR}/build/maze_solver",
+            "request": "launch",
+            "cwd": "${CMAKE_CURRENT_SOURCE_DIR}"
+        }
+    ]
+}
