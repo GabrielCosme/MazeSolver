@@ -6,7 +6,7 @@
 #include "micras.hpp"
 
 template <std::uint8_t width, std::uint8_t height>
-Micras<width, height>::Micras(const Pose& start, const Pose& goal) : pose(start), known_maze(start, goal) { }
+Micras<width, height>::Micras(const GridPose& start, const GridPose& goal) : pose(start), known_maze(start, goal) { }
 
 template <std::uint8_t width, std::uint8_t height>
 void Micras<width, height>::step(const std::array<bool, 3>& information) {
@@ -15,7 +15,7 @@ void Micras<width, height>::step(const std::array<bool, 3>& information) {
 }
 
 template <std::uint8_t width, std::uint8_t height>
-const Pose& Micras<width, height>::get_pose() const {
+const GridPose& Micras<width, height>::get_pose() const {
     return this->pose;
 }
 
@@ -25,7 +25,8 @@ std::ostream& operator<<(std::ostream& os, const Micras<width, height>& micras) 
 
     buffer << micras.known_maze;
 
-    std::int16_t mouse_pos = (4 * width + 3) * (2 * (height - 1 - micras.pose.y) + 1) + 4 * (width - micras.pose.x) + 1;
+    std::int16_t mouse_pos =
+        (4 * width + 3) * (2 * (height - 1 - micras.pose.position.y) + 1) + 4 * (width - micras.pose.position.x) + 1;
 
     buffer.seekp(-mouse_pos, std::ios_base::cur);
 

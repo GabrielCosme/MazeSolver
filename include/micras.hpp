@@ -10,17 +10,17 @@
 template <std::uint8_t width, std::uint8_t height>
 class Micras {
 public:
-    Micras(const Pose& start, const Pose& goal);
+    Micras(const GridPose& start, const GridPose& goal);
 
     void step(const std::array<bool, 3>& information);
 
-    const Pose& get_pose() const;
+    const GridPose& get_pose() const;
 
     template <std::uint8_t w, std::uint8_t h>
     friend std::ostream& operator<<(std::ostream& os, const Micras<w, h>& micras);
 
 private:
-    Pose pose;
+    GridPose pose;
 
     KnownMaze<width, height> known_maze;
 };

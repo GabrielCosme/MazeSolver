@@ -11,11 +11,11 @@
 template <std::uint8_t width, std::uint8_t height>
 class KnownMaze {
 public:
-    KnownMaze(const Pose& start, const Pose& goal);
+    KnownMaze(const GridPose& start, const GridPose& goal);
 
-    void update(const Pose& pose, const std::array<bool, 3>& information);
+    void update(const GridPose& pose, const std::array<bool, 3>& information);
 
-    Pose get_action(const Pose& pose, bool force_costmap = false) const;
+    GridPose get_action(const GridPose& pose, bool force_costmap = false) const;
 
     template <std::uint8_t w, std::uint8_t h>
     friend std::ostream& operator<<(std::ostream& os, const KnownMaze<w, h>& maze);
@@ -29,21 +29,21 @@ private:
 
     void calculate_costmap();
 
-    const Cell& get_cell(const Pose& pose) const;
+    const Cell& get_cell(const GridPoint& position) const;
 
-    Cell& get_cell(const Pose& pose);
+    Cell& get_cell(const GridPoint& position);
 
-    void update_walls(const Pose& pose, bool wall);
+    void update_walls(const GridPose& pose, bool wall);
 
     std::array<std::array<Cell, width>, height> cells{};
 
-    Pose start;
-    Pose goal;
+    GridPose start;
+    GridPose goal;
 
     bool returning{};
     bool exploring{true};
 
-    std::map<std::uint16_t, std::pair<std::uint8_t, std::uint8_t>, std::greater<std::uint16_t>> best_route;
+    std::map<std::uint16_t, GridPoint, std::greater<std::uint16_t>> best_route;
 };
 
 #include "../src/known_maze.cpp"

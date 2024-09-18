@@ -76,31 +76,31 @@ std::ostream& operator<<(std::ostream& os, const Maze<width, height>& maze) {
 }
 
 template <std::uint8_t width, std::uint8_t height>
-std::array<bool, 3> Maze<width, height>::get_information(const Pose& pose) const {
-    if (this->walls.at(pose.y).at(pose.x)[pose.orientation]) {
+std::array<bool, 3> Maze<width, height>::get_information(const GridPose& pose) const {
+    if (this->walls.at(pose.position.y).at(pose.position.x)[pose.orientation]) {
         return {false, true, false};
     }
 
     switch (pose.orientation) {
         case Side::LEFT:
             return {
-                this->walls.at(pose.y).at(pose.x - 1)[Side::DOWN], false,
-                this->walls.at(pose.y).at(pose.x - 1)[Side::UP]
+                this->walls.at(pose.position.y).at(pose.position.x - 1)[Side::DOWN], false,
+                this->walls.at(pose.position.y).at(pose.position.x - 1)[Side::UP]
             };
         case Side::UP:
             return {
-                this->walls.at(pose.y - 1).at(pose.x)[Side::LEFT], false,
-                this->walls.at(pose.y - 1).at(pose.x)[Side::RIGHT]
+                this->walls.at(pose.position.y - 1).at(pose.position.x)[Side::LEFT], false,
+                this->walls.at(pose.position.y - 1).at(pose.position.x)[Side::RIGHT]
             };
         case Side::RIGHT:
             return {
-                this->walls.at(pose.y).at(pose.x + 1)[Side::UP], false,
-                this->walls.at(pose.y).at(pose.x + 1)[Side::DOWN]
+                this->walls.at(pose.position.y).at(pose.position.x + 1)[Side::UP], false,
+                this->walls.at(pose.position.y).at(pose.position.x + 1)[Side::DOWN]
             };
         case Side::DOWN:
             return {
-                this->walls.at(pose.y + 1).at(pose.x)[Side::RIGHT], false,
-                this->walls.at(pose.y + 1).at(pose.x)[Side::LEFT]
+                this->walls.at(pose.position.y + 1).at(pose.position.x)[Side::RIGHT], false,
+                this->walls.at(pose.position.y + 1).at(pose.position.x)[Side::LEFT]
             };
     }
 

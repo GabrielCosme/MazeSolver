@@ -8,7 +8,7 @@
 #include "known_maze.hpp"
 
 template <std::uint8_t width, std::uint8_t height>
-KnownMaze<width, height>::KnownMaze(const Pose& start, const Pose& goal) : start(start), goal(goal) {
+KnownMaze<width, height>::KnownMaze(const GridPose& start, const GridPose& goal) : start(start), goal(goal) {
     for (std::uint8_t row = 0; row < height; row++) {
         this->cells[row][0].walls[Side::LEFT] = true;
         this->cells[row][width - 1].walls[Side::RIGHT] = true;
@@ -19,13 +19,13 @@ KnownMaze<width, height>::KnownMaze(const Pose& start, const Pose& goal) : start
         this->cells[height - 1][col].walls[Side::DOWN] = true;
     }
 
-    this->get_cell(goal).cost = 0;
+    this->get_cell(goal.position).cost = 0;
     this->calculate_costmap();
 }
 
 template <std::uint8_t width, std::uint8_t height>
-void KnownMaze<width, height>::update(const Pose& pose, const std::array<bool, 3>& information) {
-    if (pose.together(this->goal)) {
+void KnownMaze<width, height>::update(const GridPose& pose, const std::array<bool, 3>& information) {
+    if (pose.position == this->goal.position) {
         this->returning = true;
     } else if (pose == start.turned_back()) {
         this->exploring = false;
@@ -37,7 +37,7 @@ void KnownMaze<width, height>::update(const Pose& pose, const std::array<bool, 3
     }
 
     this->update_walls(pose, information[Side::UP]);
-    Pose front_pose = pose.front();
+    GridPose front_pose = pose.front();
 
     if (not information[Side::UP]) {
         this->update_walls(front_pose.turned_left(), information[Side::LEFT]);
@@ -48,38 +48,38 @@ void KnownMaze<width, height>::update(const Pose& pose, const std::array<bool, 3
 }
 
 template <std::uint8_t width, std::uint8_t height>
-Pose KnownMaze<width, height>::get_action(const Pose& pose, bool force_costmap) const {
-    const Cell&   current_cell = this->get_cell(pose);
+GridPose KnownMaze<width, height>::get_action(const GridPose& pose, bool force_costmap) const {
+    const Cell&   current_cell = this->get_cell(pose.position);
     std::uint16_t current_cost = current_cell.cost;
 
     if (not force_costmap and (not this->exploring or this->returning) and this->best_route.contains(current_cost) and
-        this->best_route.at(current_cost) == std::make_pair(pose.x, pose.y)) {
-        const auto& aux = (this->returning ? std::prev(this->best_route.find(current_cost)) :
-                                             std::next(this->best_route.find(current_cost)))
-                              ->second;
+        this->best_route.at(current_cost) == pose.position) {
+        const auto& next_position = (this->returning ? std::prev(this->best_route.find(current_cost)) :
+                                                       std::next(this->best_route.find(current_cost)))
+                                        ->second;
 
-        Side new_dir = pose.direction({aux.first, aux.second, pose.orientation});
+        Side new_dir = pose.position.direction(next_position);
 
         if (pose.orientation != new_dir) {
-            return {pose.x, pose.y, pose.direction({aux.first, aux.second, new_dir})};
+            return {pose.position, pose.position.direction(next_position)};
         }
 
-        return {aux.first, aux.second, pose.orientation};
+        return {next_position, pose.orientation};
     }
 
-    Pose next_pose = pose;
+    GridPose next_pose = pose;
 
     for (std::uint8_t i = Side::LEFT; i <= Side::DOWN; i++) {
-        Side side = static_cast<Side>(i);
-        Pose front_pose = pose + side;
+        Side      side = static_cast<Side>(i);
+        GridPoint front_position = pose.position + side;
 
-        if (not current_cell.walls[side] and this->get_cell(front_pose).cost <= current_cost) {
-            current_cost = this->get_cell(front_pose).cost;
+        if (not current_cell.walls[side] and this->get_cell(front_position).cost <= current_cost) {
+            current_cost = this->get_cell(front_position).cost;
 
             if (pose.orientation == side) {
-                next_pose = front_pose;
+                next_pose = {front_position, side};
             } else {
-                next_pose = {pose.x, pose.y, side};
+                next_pose = {pose.position, side};
             }
         }
     }
@@ -88,23 +88,23 @@ Pose KnownMaze<width, height>::get_action(const Pose& pose, bool force_costmap) 
 }
 
 template <std::uint8_t width, std::uint8_t height>
-const KnownMaze<width, height>::Cell& KnownMaze<width, height>::get_cell(const Pose& pose) const {
-    return this->cells.at(pose.y).at(pose.x);
+const KnownMaze<width, height>::Cell& KnownMaze<width, height>::get_cell(const GridPoint& position) const {
+    return this->cells.at(position.y).at(position.x);
 }
 
 template <std::uint8_t width, std::uint8_t height>
-KnownMaze<width, height>::Cell& KnownMaze<width, height>::get_cell(const Pose& pose) {
-    return this->cells.at(pose.y).at(pose.x);
+KnownMaze<width, height>::Cell& KnownMaze<width, height>::get_cell(const GridPoint& position) {
+    return this->cells.at(position.y).at(position.x);
 }
 
 template <std::uint8_t width, std::uint8_t height>
-void KnownMaze<width, height>::update_walls(const Pose& pose, bool wall) {
+void KnownMaze<width, height>::update_walls(const GridPose& pose, bool wall) {
     try {
-        this->get_cell(pose).walls[pose.orientation] = wall;
-        this->get_cell(pose).seen[pose.orientation] = true;
+        this->get_cell(pose.position).walls[pose.orientation] = wall;
+        this->get_cell(pose.position).seen[pose.orientation] = true;
 
-        this->get_cell(pose.front()).walls[pose.turned_back().orientation] = wall;
-        this->get_cell(pose.front()).seen[pose.turned_back().orientation] = true;
+        this->get_cell(pose.front().position).walls[pose.turned_back().orientation] = wall;
+        this->get_cell(pose.front().position).seen[pose.turned_back().orientation] = true;
     } catch (const std::out_of_range& e) {
         return;
     }
@@ -114,30 +114,31 @@ template <std::uint8_t width, std::uint8_t height>
 void KnownMaze<width, height>::calculate_costmap() {
     std::array<std::array<bool, width>, height> visited{};
     std::array<std::array<Side, width>, height> origin{};
-    std::queue<Pose>                            queue;
+    std::queue<GridPoint>                       queue;
 
-    queue.push(this->goal);
-    visited.at(this->goal.y).at(this->goal.x) = true;
+    queue.push(this->goal.position);
+    visited.at(this->goal.position.y).at(this->goal.position.x) = true;
 
     while (not queue.empty()) {
-        Pose current_pose = queue.front();
+        GridPoint current_position = queue.front();
         queue.pop();
 
-        Cell& current_cell = this->get_cell(current_pose);
+        Cell& current_cell = this->get_cell(current_position);
 
         for (std::uint8_t i = Side::LEFT; i <= Side::DOWN; i++) {
-            Side side = static_cast<Side>(i);
-            Pose front_pose = current_pose + side;
+            Side      side = static_cast<Side>(i);
+            GridPoint front_position = current_position + side;
 
-            if (not current_cell.walls[side] and not visited.at(front_pose.y).at(front_pose.x)) {
-                visited.at(front_pose.y).at(front_pose.x) = true;
-                origin.at(front_pose.y).at(front_pose.x) = side;
+            if (not current_cell.walls[side] and not visited.at(front_position.y).at(front_position.x)) {
+                visited.at(front_position.y).at(front_position.x) = true;
+                origin.at(front_position.y).at(front_position.x) = side;
 
-                this->get_cell(front_pose).cost =
-                    (current_cell.cost +
-                     (current_pose.together(this->goal) or (side == origin.at(current_pose.y).at(current_pose.x)) ? 1 :
-                                                                                                                    2));
-                queue.push(front_pose);
+                this->get_cell(front_position).cost =
+                    (current_cell.cost + (current_position == this->goal.position or
+                                                  (side == origin.at(current_position.y).at(current_position.x)) ?
+                                              1 :
+                                              2));
+                queue.push(front_position);
             }
         }
     }
@@ -146,13 +147,13 @@ void KnownMaze<width, height>::calculate_costmap() {
         return;
     }
 
-    Pose current_pose = this->start;
+    GridPose current_pose = this->start;
     this->best_route.clear();
-    this->best_route.try_emplace(this->get_cell(this->start).cost, this->start.x, this->start.y);
+    this->best_route.try_emplace(this->get_cell(this->start.position).cost, this->start.position);
 
-    while (current_pose.x != this->goal.x or current_pose.y != this->goal.y) {
+    while (current_pose.position != this->goal.position) {
         current_pose = this->get_action(current_pose, true);
-        this->best_route.try_emplace(this->get_cell(current_pose).cost, current_pose.x, current_pose.y);
+        this->best_route.try_emplace(this->get_cell(current_pose.position).cost, current_pose.position);
     }
 }
 
@@ -174,9 +175,9 @@ std::ostream& operator<<(std::ostream& os, const KnownMaze<width, height>& maze)
             if ((row % 2 == 0) and (col % 2 == 0)) {
                 drawing_array[row][col] = "%%";
             } else if ((row % 2 == 1) and (col % 2 == 1)) {
-                if (row / 2 == maze.start.y and col / 2 == maze.start.x) {
+                if (row / 2 == maze.start.position.y and col / 2 == maze.start.position.x) {
                     drawing_array[row][col] = "()";
-                } else if (row / 2 == maze.goal.y and col / 2 == maze.goal.x) {
+                } else if (row / 2 == maze.goal.position.y and col / 2 == maze.goal.position.x) {
                     drawing_array[row][col] = "[]";
                 } else {
                     drawing_array[row][col] = std::format("{:02}", maze.cells[row / 2][col / 2].cost);

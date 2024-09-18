@@ -10,63 +10,42 @@ enum Side {
     DOWN = 3
 };
 
-struct Pose {
-    Pose() = default;
+struct GridPoint {
+    GridPoint() = default;
 
-    Pose(std::uint8_t x, std::uint8_t y, Side orientation) : x(x), y(y), orientation(orientation) { }
+    GridPoint(std::uint8_t x, std::uint8_t y);
 
-    Pose front() const { return *this + this->orientation; }
+    Side direction(const GridPoint& next) const;
 
-    Pose turned_back() const { return {this->x, this->y, static_cast<Side>((this->orientation + 2) % 4)}; }
+    GridPoint operator+(const GridPoint& GridPoint) const;
 
-    Pose turned_left() const { return {this->x, this->y, static_cast<Side>((this->orientation + 3) % 4)}; }
+    GridPoint operator+(const Side& side) const;
 
-    Pose turned_right() const { return {this->x, this->y, static_cast<Side>((this->orientation + 1) % 4)}; }
-
-    Side direction(const Pose& next) const {
-        if (next.x < this->x) {
-            return Side::LEFT;
-        }
-
-        if (next.y < this->y) {
-            return Side::UP;
-        }
-
-        if (next.x > this->x) {
-            return Side::RIGHT;
-        }
-
-        if (next.y > this->y) {
-            return Side::DOWN;
-        }
-
-        return Side::UP;
-    }
-
-    bool together(const Pose& other) const { return this->x == other.x and this->y == other.y; }
-
-    bool operator==(const Pose& other) const {
-        return this->x == other.x and this->y == other.y and this->orientation == other.orientation;
-    }
-
-    Pose operator+(const Side& side) const {
-        switch (side) {
-            case Side::LEFT:
-                return {static_cast<std::uint8_t>(this->x - 1), this->y, side};
-            case Side::UP:
-                return {this->x, static_cast<std::uint8_t>(this->y - 1), side};
-            case Side::RIGHT:
-                return {static_cast<std::uint8_t>(this->x + 1), this->y, side};
-            case Side::DOWN:
-                return {this->x, static_cast<std::uint8_t>(this->y + 1), side};
-        }
-
-        return *this;
-    }
+    bool operator==(const GridPoint& other) const;
 
     std::uint8_t x;
     std::uint8_t y;
-    Side         orientation;
+};
+
+struct GridPose {
+    GridPose() = default;
+
+    GridPose(GridPoint position, Side orientation);
+
+    GridPose(std::uint8_t x, std::uint8_t y, Side orientation);
+
+    GridPose front() const;
+
+    GridPose turned_back() const;
+
+    GridPose turned_left() const;
+
+    GridPose turned_right() const;
+
+    bool operator==(const GridPose& other) const;
+
+    GridPoint position;
+    Side      orientation;
 };
 
 #endif  // TYPE_HPP
