@@ -16,12 +16,12 @@ Maze<width, height>::Maze(const std::string& filename) {
 
     for (std::uint8_t col = 0; col < width; col++) {
         file.read(buffer.data(), 4);
-        this->walls[0][col][Side::UP] = (buffer[2] == '%');
+        this->walls[height - 1][col][Side::UP] = (buffer[2] == '%');
     }
 
     file.ignore(1000, '\n');
 
-    for (std::uint8_t row = 0; row < height; row++) {
+    for (std::int8_t row = height - 1; row >= 0; row--) {
         file.ignore(1);
 
         for (std::uint8_t col = 0; col < width; col++) {
@@ -36,8 +36,8 @@ Maze<width, height>::Maze(const std::string& filename) {
             file.read(buffer.data(), 4);
             this->walls[row][col][Side::DOWN] = (buffer[2] == '%');
 
-            if (row < height - 1) {
-                this->walls[row + 1][col][Side::UP] = (buffer[2] == '%');
+            if (row > 0) {
+                this->walls[row - 1][col][Side::UP] = (buffer[2] == '%');
             }
         }
 
@@ -76,35 +76,59 @@ std::ostream& operator<<(std::ostream& os, const Maze<width, height>& maze) {
 }
 
 template <std::uint8_t width, std::uint8_t height>
-std::array<bool, 3> Maze<width, height>::get_information(const GridPose& pose) const {
+Information Maze<width, height>::get_information(const GridPose& pose) const {
+    Information information{};
+
     if (this->walls.at(pose.position.y).at(pose.position.x)[pose.orientation]) {
-        return {false, true, false};
+        information.front = Information::WALL;
+        return information;
     }
+
+    information.front = Information::FREE;
 
     switch (pose.orientation) {
-        case Side::LEFT:
-            return {
-                this->walls.at(pose.position.y).at(pose.position.x - 1)[Side::DOWN], false,
-                this->walls.at(pose.position.y).at(pose.position.x - 1)[Side::UP]
-            };
-        case Side::UP:
-            return {
-                this->walls.at(pose.position.y - 1).at(pose.position.x)[Side::LEFT], false,
-                this->walls.at(pose.position.y - 1).at(pose.position.x)[Side::RIGHT]
-            };
         case Side::RIGHT:
-            return {
-                this->walls.at(pose.position.y).at(pose.position.x + 1)[Side::UP], false,
-                this->walls.at(pose.position.y).at(pose.position.x + 1)[Side::DOWN]
-            };
+            information.front_left = this->walls.at(pose.position.y).at(pose.position.x + 1)[Side::UP] ?
+                                         Information::WALL :
+                                         Information::FREE;
+
+            information.front_right = this->walls.at(pose.position.y).at(pose.position.x + 1)[Side::DOWN] ?
+                                          Information::WALL :
+                                          Information::FREE;
+            return information;
+
+        case Side::UP:
+            information.front_left = this->walls.at(pose.position.y + 1).at(pose.position.x)[Side::LEFT] ?
+                                         Information::WALL :
+                                         Information::FREE;
+
+            information.front_right = this->walls.at(pose.position.y + 1).at(pose.position.x)[Side::RIGHT] ?
+                                          Information::WALL :
+                                          Information::FREE;
+            return information;
+
+        case Side::LEFT:
+            information.front_left = this->walls.at(pose.position.y).at(pose.position.x - 1)[Side::DOWN] ?
+                                         Information::WALL :
+                                         Information::FREE;
+
+            information.front_right = this->walls.at(pose.position.y).at(pose.position.x - 1)[Side::UP] ?
+                                          Information::WALL :
+                                          Information::FREE;
+            return information;
+
         case Side::DOWN:
-            return {
-                this->walls.at(pose.position.y + 1).at(pose.position.x)[Side::RIGHT], false,
-                this->walls.at(pose.position.y + 1).at(pose.position.x)[Side::LEFT]
-            };
+            information.front_left = this->walls.at(pose.position.y - 1).at(pose.position.x)[Side::RIGHT] ?
+                                         Information::WALL :
+                                         Information::FREE;
+
+            information.front_right = this->walls.at(pose.position.y - 1).at(pose.position.x)[Side::LEFT] ?
+                                          Information::WALL :
+                                          Information::FREE;
+            return information;
     }
 
-    return {false, false, false};
+    return information;
 }
 
 #endif  // MAZE_CPP

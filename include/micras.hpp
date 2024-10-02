@@ -10,9 +10,9 @@
 template <std::uint8_t width, std::uint8_t height>
 class Micras {
 public:
-    Micras(const GridPose& start, const GridPose& goal);
+    Micras(const GridPose& start);
 
-    void step(const std::array<bool, 3>& information);
+    void step(const Information& information);
 
     const GridPose& get_pose() const;
 

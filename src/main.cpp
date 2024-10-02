@@ -4,8 +4,8 @@
 #include "micras.hpp"
 
 int main() {
-    Maze<5, 5>   maze("../mazes/test2.txt");
-    Micras<5, 5> micras{{0, 4, Side::UP}, {4, 4, Side::DOWN}};
+    Maze<5, 5>   maze("/home/gabriel-cosme/Codes/Micras/MazeSolver/mazes/test2.txt");
+    Micras<5, 5> micras{{0, 0, Side::UP}};
 
     std::cout << maze << '\n';
     std::cout << micras << '\n';

@@ -13,7 +13,7 @@ class Maze {
 public:
     Maze(const std::string& filename);
 
-    std::array<bool, 3> get_information(const GridPose& pose) const;
+    Information get_information(const GridPose& pose) const;
 
     template <std::uint8_t w, std::uint8_t h>
     friend std::ostream& operator<<(std::ostream& os, const Maze<w, h>& maze);
